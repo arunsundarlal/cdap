@@ -31,7 +31,6 @@ import io.cdap.cdap.common.conf.CConfiguration;
 import io.cdap.cdap.common.conf.Constants;
 import io.cdap.cdap.common.conf.SConfiguration;
 import io.cdap.cdap.common.guice.ConfigModule;
-import io.cdap.cdap.common.guice.DFSLocationModule;
 import io.cdap.cdap.common.guice.IOModule;
 import io.cdap.cdap.common.logging.LoggingContext;
 import io.cdap.cdap.common.logging.LoggingContextAccessor;
@@ -46,8 +45,8 @@ import io.cdap.cdap.data2.transaction.DelegatingTransactionSystemClientService;
 import io.cdap.cdap.data2.transaction.TransactionSystemClientService;
 import io.cdap.cdap.logging.appender.LogAppenderInitializer;
 import io.cdap.cdap.logging.guice.RemoteLogAppenderModule;
-import io.cdap.cdap.master.environment.DefaultMasterEnvironmentContext;
 import io.cdap.cdap.master.environment.MasterEnvironmentExtensionLoader;
+import io.cdap.cdap.master.environment.MasterEnvironments;
 import io.cdap.cdap.master.spi.environment.MasterEnvironment;
 import io.cdap.cdap.master.spi.environment.MasterEnvironmentContext;
 import io.cdap.cdap.metrics.guice.MetricsClientRuntimeModule;
@@ -154,7 +153,7 @@ public abstract class AbstractServiceMain<T extends EnvironmentOptions> extends 
                                            + options.getEnvProvider());
     }
 
-    MasterEnvironmentContext masterEnvContext = createMasterEnvironmentContext(cConf, hConf);
+    MasterEnvironmentContext masterEnvContext = MasterEnvironments.createContext(cConf, hConf);
     try {
       masterEnv.initialize(masterEnvContext);
     } catch (Exception e) {
@@ -330,21 +329,5 @@ public abstract class AbstractServiceMain<T extends EnvironmentOptions> extends 
     public T get() {
       return supplier.get();
     }
-  }
-
-  /**
-   * Creates a new {@link MasterEnvironmentContext} from the given configurations.
-   */
-  private MasterEnvironmentContext createMasterEnvironmentContext(CConfiguration cConf, Configuration hConf) {
-    Injector injector = Guice.createInjector(
-      new ConfigModule(cConf, hConf),
-      new DFSLocationModule(),
-      new AbstractModule() {
-        @Override
-        protected void configure() {
-          bind(MasterEnvironmentContext.class).to(DefaultMasterEnvironmentContext.class);
-        }
-      });
-    return injector.getInstance(MasterEnvironmentContext.class);
   }
 }
