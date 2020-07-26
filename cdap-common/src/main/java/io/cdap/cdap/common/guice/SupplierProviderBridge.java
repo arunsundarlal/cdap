@@ -14,14 +14,27 @@
  * the License.
  */
 
-package io.cdap.cdap.master.spi.environment;
+package io.cdap.cdap.common.guice;
+
+import com.google.inject.Provider;
+
+import java.util.function.Supplier;
 
 /**
+ * The class bridge a {@link Supplier} to Guice {@link Provider}.
  *
+ * @param <T> type of the object provided by this {@link Provider}
  */
-public interface MasterEnvironmentRunnable {
+public final class SupplierProviderBridge<T> implements Provider<T> {
 
-  void run(String[] args) throws Exception;
+  private final Supplier<T> supplier;
 
-  void stop();
+  public SupplierProviderBridge(Supplier<T> supplier) {
+    this.supplier = supplier;
+  }
+
+  @Override
+  public T get() {
+    return supplier.get();
+  }
 }
