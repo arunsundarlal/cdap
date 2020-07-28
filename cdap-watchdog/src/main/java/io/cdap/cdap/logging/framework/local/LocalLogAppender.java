@@ -27,7 +27,6 @@ import io.cdap.cdap.common.conf.CConfiguration;
 import io.cdap.cdap.common.conf.Constants;
 import io.cdap.cdap.logging.appender.LogAppender;
 import io.cdap.cdap.logging.appender.LogMessage;
-import io.cdap.cdap.logging.framework.CustomLogPipelineConfigProvider;
 import io.cdap.cdap.logging.framework.LocalAppenderContext;
 import io.cdap.cdap.logging.framework.LogPipelineLoader;
 import io.cdap.cdap.logging.framework.LogPipelineSpecification;
@@ -65,12 +64,10 @@ public class LocalLogAppender extends LogAppender {
   private final MetricsCollectionService metricsCollectionService;
   private final AtomicReference<List<LocalLogProcessorPipeline>> pipelines;
   private final AtomicReference<Set<Thread>> pipelineThreads;
-  private final CustomLogPipelineConfigProvider customLogPipelineConfigProvider;
 
   @Inject
   LocalLogAppender(CConfiguration cConf, TransactionRunner transactionRunner,
-                   LocationFactory locationFactory, MetricsCollectionService metricsCollectionService,
-                   CustomLogPipelineConfigProvider customLogPipelineConfigProvider) {
+                   LocationFactory locationFactory, MetricsCollectionService metricsCollectionService) {
     this.cConf = cConf;
     this.transactionRunner = transactionRunner;
     this.locationFactory = locationFactory;
@@ -78,13 +75,12 @@ public class LocalLogAppender extends LogAppender {
     this.pipelines = new AtomicReference<>(Collections.emptyList());
     this.pipelineThreads = new AtomicReference<>(Collections.emptySet());
     setName(getClass().getName());
-    this.customLogPipelineConfigProvider = customLogPipelineConfigProvider;
   }
 
   @Override
   public void start() {
     // Load and starts all configured log processing pipelines
-    LogPipelineLoader pipelineLoader = new LogPipelineLoader(cConf, customLogPipelineConfigProvider);
+    LogPipelineLoader pipelineLoader = new LogPipelineLoader(cConf);
     Map<String, LogPipelineSpecification<AppenderContext>> specs =
       pipelineLoader.load(() -> new LocalAppenderContext(transactionRunner, locationFactory, metricsCollectionService));
 

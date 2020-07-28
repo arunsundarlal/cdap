@@ -65,7 +65,7 @@ import io.cdap.cdap.internal.app.namespace.NoopNamespaceResourceDeleter;
 import io.cdap.cdap.internal.app.namespace.StorageProviderNamespaceAdmin;
 import io.cdap.cdap.internal.app.store.DefaultStore;
 import io.cdap.cdap.internal.app.store.preview.DefaultPreviewStore;
-import io.cdap.cdap.logging.guice.PreviewLocalLogAppenderModule;
+import io.cdap.cdap.logging.guice.LocalLogAppenderModule;
 import io.cdap.cdap.logging.read.FileLogReader;
 import io.cdap.cdap.logging.read.LogReader;
 import io.cdap.cdap.messaging.MessagingService;
@@ -123,6 +123,7 @@ public class DefaultPreviewManager extends AbstractIdleService implements Previe
   private final PreviewRunnerServiceStopper previewRunnerServiceStopper;
   private final MessagingService messagingService;
   private Injector previewInjector;
+  private PreviewDataSubscriberService subscriberService;
 
   @Inject
   DefaultPreviewManager(DiscoveryService discoveryService,
@@ -153,13 +154,12 @@ public class DefaultPreviewManager extends AbstractIdleService implements Previe
   @Override
   protected void startUp() throws Exception {
     previewInjector = createPreviewInjector();
-    PreviewDataSubscriberService subscriberService = previewInjector.getInstance(PreviewDataSubscriberService.class);
+    subscriberService = previewInjector.getInstance(PreviewDataSubscriberService.class);
     subscriberService.startAndWait();
   }
 
   @Override
   protected void shutDown() throws Exception {
-    PreviewDataSubscriberService subscriberService = previewInjector.getInstance(PreviewDataSubscriberService.class);
     stopQuietly(subscriberService);
     previewLevelDBTableService.close();
   }
@@ -255,7 +255,6 @@ public class DefaultPreviewManager extends AbstractIdleService implements Previe
       new PreviewDiscoveryRuntimeModule(discoveryService),
       new MetricsClientRuntimeModule().getInMemoryModules(),
       new DataSetServiceModules().getStandaloneModules(),
-      new PreviewLocalLogAppenderModule(),
       new MessagingServerRuntimeModule().getInMemoryModules(),
       Modules.override(new MetadataReaderWriterModules().getInMemoryModules()).with(new AbstractModule() {
         @Override
@@ -264,6 +263,7 @@ public class DefaultPreviewManager extends AbstractIdleService implements Previe
           bind(MetadataServiceClient.class).to(NoOpMetadataServiceClient.class);
         }
       }),
+      new LocalLogAppenderModule(),
       new PrivateModule() {
         @Override
         protected void configure() {

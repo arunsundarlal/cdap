@@ -17,16 +17,9 @@
 package io.cdap.cdap.logging.guice;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
 import com.google.inject.Scopes;
-import io.cdap.cdap.common.conf.CConfiguration;
-import io.cdap.cdap.common.conf.Constants;
-import io.cdap.cdap.common.utils.DirUtils;
 import io.cdap.cdap.logging.appender.LogAppender;
-import io.cdap.cdap.logging.framework.CustomLogPipelineConfigProvider;
 import io.cdap.cdap.logging.framework.local.LocalLogAppender;
-
-import java.io.File;
 
 /**
  * A Guice module to provide binding for {@link LogAppender} that writes log entries locally.
@@ -36,10 +29,5 @@ public class LocalLogAppenderModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(LogAppender.class).to(LocalLogAppender.class).in(Scopes.SINGLETON);
-  }
-
-  @Provides
-  public CustomLogPipelineConfigProvider provideCustomLogConfig(CConfiguration cConf) {
-    return () -> DirUtils.listFiles(new File(cConf.get(Constants.Logging.PIPELINE_CONFIG_DIR)), "xml");
   }
 }

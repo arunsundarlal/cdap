@@ -82,8 +82,7 @@ public class PreviewDataSubscriberService extends AbstractMessagingSubscriberSer
       cConf.getInt(Constants.Metadata.MESSAGING_FETCH_SIZE),
       cConf.getInt(TxConstants.Manager.CFG_TX_TIMEOUT),
       cConf.getLong(Constants.Metadata.MESSAGING_POLL_DELAY_MILLIS),
-      // TODO: using same configs as metadata
-      RetryStrategies.fromConfiguration(cConf, "system.metadata."),
+      RetryStrategies.fromConfiguration(cConf, "system.preview."),
       metricsCollectionService.getContext(ImmutableMap.of(
         Constants.Metrics.Tag.COMPONENT, Constants.Service.MASTER_SERVICES,
         Constants.Metrics.Tag.INSTANCE_ID, "0",
@@ -179,8 +178,6 @@ public class PreviewDataSubscriberService extends AbstractMessagingSubscriberSer
    * The {@link PreviewMessageProcessor} for processing preview data.
    */
   private final class PreviewDataProcessor implements PreviewMessageProcessor {
-    PreviewDataProcessor() {}
-
     @Override
     public void processMessage(PreviewMessage message) {
       if (!(message.getEntityId() instanceof ApplicationId)) {
@@ -205,8 +202,6 @@ public class PreviewDataSubscriberService extends AbstractMessagingSubscriberSer
    * The {@link PreviewMessageProcessor} for writing preview status to store.
    */
   private final class PreviewStatusWriter implements PreviewMessageProcessor {
-    PreviewStatusWriter() {}
-
     @Override
     public void processMessage(PreviewMessage message) {
       if (!(message.getEntityId() instanceof ApplicationId)) {
@@ -237,9 +232,6 @@ public class PreviewDataSubscriberService extends AbstractMessagingSubscriberSer
    * The {@link PreviewMessageProcessor} for writing preview run id to store.
    */
   private final class PreviewProgramRunIdWriter implements PreviewMessageProcessor {
-    PreviewProgramRunIdWriter() {
-    }
-
     @Override
     public void processMessage(PreviewMessage message) {
       if (!(message.getEntityId() instanceof ApplicationId)) {

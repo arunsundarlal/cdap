@@ -36,7 +36,6 @@ import io.cdap.cdap.common.security.HttpsEnabler;
 import io.cdap.cdap.common.service.RetryOnStartFailureService;
 import io.cdap.cdap.common.service.RetryStrategies;
 import io.cdap.cdap.common.service.RetryStrategy;
-import io.cdap.cdap.logging.framework.CustomLogPipelineConfigProvider;
 import io.cdap.cdap.logging.framework.LogPipelineLoader;
 import io.cdap.cdap.logging.framework.LogPipelineSpecification;
 import io.cdap.cdap.logging.logbuffer.cleaner.LogBufferCleaner;
@@ -73,7 +72,6 @@ public class LogBufferService extends AbstractIdleService {
   private final CheckpointManagerFactory checkpointManagerFactory;
   private final List<Service> pipelines = new ArrayList<>();
   private final List<CheckpointManager<LogBufferFileOffset>> checkpointManagers = new ArrayList<>();
-  private final CustomLogPipelineConfigProvider customLogPipelineConfigProvider;
 
   private Cancellable cancellable;
   private NettyHttpService httpService;
@@ -82,14 +80,12 @@ public class LogBufferService extends AbstractIdleService {
   @Inject
   public LogBufferService(CConfiguration cConf, SConfiguration sConf, DiscoveryService discoveryService,
                           CheckpointManagerFactory checkpointManagerFactory,
-                          Provider<AppenderContext> contextProvider,
-                          CustomLogPipelineConfigProvider customLogPipelineConfigProvider) {
+                          Provider<AppenderContext> contextProvider) {
     this.cConf = cConf;
     this.sConf = sConf;
     this.contextProvider = contextProvider;
     this.checkpointManagerFactory = checkpointManagerFactory;
     this.discoveryService = discoveryService;
-    this.customLogPipelineConfigProvider = customLogPipelineConfigProvider;
   }
 
   @Override
@@ -168,8 +164,7 @@ public class LogBufferService extends AbstractIdleService {
    */
   @SuppressWarnings("unchecked")
   private List<LogBufferProcessorPipeline> loadLogPipelines() {
-    Map<String, LogPipelineSpecification<AppenderContext>> specs
-      = new LogPipelineLoader(cConf, customLogPipelineConfigProvider).load(contextProvider);
+    Map<String, LogPipelineSpecification<AppenderContext>> specs = new LogPipelineLoader(cConf).load(contextProvider);
     int pipelineCount = specs.size();
     List<LogBufferProcessorPipeline> bufferPipelines = new ArrayList<>();
     // Create one LogBufferProcessorPipeline per spec

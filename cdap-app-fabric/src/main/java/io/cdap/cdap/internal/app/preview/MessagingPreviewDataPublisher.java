@@ -19,6 +19,7 @@ package io.cdap.cdap.internal.app.preview;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import io.cdap.cdap.api.retry.RetryableException;
 import io.cdap.cdap.app.preview.PreviewConfigModule;
 import io.cdap.cdap.app.preview.PreviewDataPublisher;
 import io.cdap.cdap.app.preview.PreviewMessage;
@@ -33,6 +34,8 @@ import io.cdap.cdap.messaging.client.StoreRequestBuilder;
 import io.cdap.cdap.proto.id.EntityId;
 import io.cdap.cdap.proto.id.NamespaceId;
 import io.cdap.cdap.proto.id.TopicId;
+
+import java.io.IOException;
 
 /**
  * Preview data publisher that publishes to the TMS.
@@ -49,15 +52,15 @@ public class MessagingPreviewDataPublisher implements PreviewDataPublisher {
                                 @Named(PreviewConfigModule.GLOBAL_TMS) MessagingService messagingService) {
     this.topic = NamespaceId.SYSTEM.topic(cConf.get(Constants.Preview.MESSAGING_TOPIC));
     this.messagingService = messagingService;
-    //TODO using system.metadata properties
-    this.retryStrategy = RetryStrategies.fromConfiguration(cConf, "system.metadata.");
+    this.retryStrategy = RetryStrategies.fromConfiguration(cConf, "system.preview.");
   }
 
   @Override
   public void publish(EntityId entityId, PreviewMessage previewMessage) {
     StoreRequest request = StoreRequestBuilder.of(topic).addPayload(GSON.toJson(previewMessage)).build();
     try {
-      Retries.callWithRetries(() -> messagingService.publish(request), retryStrategy, Retries.ALWAYS_TRUE);
+      Retries.callWithRetries(() -> messagingService.publish(request), retryStrategy,
+                              t -> t instanceof IOException || t instanceof RetryableException);
     } catch (Exception e) {
       throw new RuntimeException("Failed to publish preview message " + previewMessage + " for application " + entityId,
                                  e);

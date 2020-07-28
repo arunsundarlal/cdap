@@ -31,7 +31,6 @@ import io.cdap.cdap.common.resource.ResourceBalancerService;
 import io.cdap.cdap.common.service.RetryOnStartFailureService;
 import io.cdap.cdap.common.service.RetryStrategies;
 import io.cdap.cdap.common.service.RetryStrategy;
-import io.cdap.cdap.logging.framework.CustomLogPipelineConfigProvider;
 import io.cdap.cdap.logging.framework.LogPipelineLoader;
 import io.cdap.cdap.logging.framework.LogPipelineSpecification;
 import io.cdap.cdap.logging.meta.CheckpointManagerFactory;
@@ -60,7 +59,6 @@ public class DistributedLogFramework extends ResourceBalancerService {
   private final Provider<AppenderContext> contextProvider;
   private final CheckpointManagerFactory checkpointManagerFactory;
   private final BrokerService brokerService;
-  private final CustomLogPipelineConfigProvider customLogPipelineConfigProvider;
 
   @Inject
   DistributedLogFramework(CConfiguration cConf,
@@ -69,22 +67,19 @@ public class DistributedLogFramework extends ResourceBalancerService {
                           DiscoveryServiceClient discoveryServiceClient,
                           Provider<AppenderContext> contextProvider,
                           CheckpointManagerFactory checkpointManagerFactory,
-                          BrokerService brokerService,
-                          CustomLogPipelineConfigProvider customLogPipelineConfigProvider) {
+                          BrokerService brokerService) {
     super(SERVICE_NAME, cConf.getInt(Constants.Logging.NUM_PARTITIONS),
           zkClient, discoveryService, discoveryServiceClient);
     this.cConf = cConf;
     this.contextProvider = contextProvider;
     this.checkpointManagerFactory = checkpointManagerFactory;
     this.brokerService = brokerService;
-    this.customLogPipelineConfigProvider = customLogPipelineConfigProvider;
   }
 
   @Override
   @SuppressWarnings("unchecked")
   protected Service createService(Set<Integer> partitions) {
-    Map<String, LogPipelineSpecification<AppenderContext>> specs
-      = new LogPipelineLoader(cConf, customLogPipelineConfigProvider).load(contextProvider);
+    Map<String, LogPipelineSpecification<AppenderContext>> specs = new LogPipelineLoader(cConf).load(contextProvider);
     int pipelineCount = specs.size();
 
     // Create one KafkaLogProcessorPipeline per spec
