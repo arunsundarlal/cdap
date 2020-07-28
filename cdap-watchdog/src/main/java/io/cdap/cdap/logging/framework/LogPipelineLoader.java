@@ -24,6 +24,7 @@ import ch.qos.logback.core.status.Status;
 import ch.qos.logback.core.status.StatusChecker;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.inject.Provider;
 import io.cdap.cdap.common.conf.CConfiguration;
 import io.cdap.cdap.common.conf.Constants;
@@ -61,6 +62,11 @@ public class LogPipelineLoader {
   public LogPipelineLoader(CConfiguration cConf, CustomLogPipelineConfigProvider provider) {
     this.cConf = cConf;
     this.provider = provider;
+  }
+
+  public LogPipelineLoader(CConfiguration cConf) {
+    this.cConf = cConf;
+    this.provider = null;
   }
 
   /**
@@ -161,8 +167,9 @@ public class LogPipelineLoader {
     // This shouldn't happen since the cdap pipeline is packaged in the jar.
     Preconditions.checkState(systemPipeline != null, "Missing cdap system pipeline configuration");
 
-    List<File> files = DirUtils.listFiles(new File(cConf.get(Constants.Logging.PIPELINE_CONFIG_DIR)), "xml");
-
+    if (provider == null) {
+      return Collections.singleton(systemPipeline);
+    }
     return Stream.concat(Stream.of(systemPipeline), provider.getPipelineConfigFiles().stream().map(this::toURL)
         .filter(Objects::nonNull))::iterator;
   }

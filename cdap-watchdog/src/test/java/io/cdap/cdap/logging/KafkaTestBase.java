@@ -19,15 +19,19 @@ package io.cdap.cdap.logging;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import io.cdap.cdap.common.conf.CConfiguration;
 import io.cdap.cdap.common.conf.Constants;
 import io.cdap.cdap.common.guice.NonCustomLocationUnitTestModule;
 import io.cdap.cdap.common.namespace.NamespaceQueryAdmin;
 import io.cdap.cdap.common.namespace.SimpleNamespaceQueryAdmin;
+import io.cdap.cdap.common.utils.DirUtils;
 import io.cdap.cdap.data.runtime.DataSetsModules;
 import io.cdap.cdap.data.runtime.StorageModule;
 import io.cdap.cdap.data.runtime.SystemDatasetRuntimeModule;
 import io.cdap.cdap.data.runtime.TransactionExecutorModule;
 import io.cdap.cdap.kafka.KafkaTester;
+import io.cdap.cdap.logging.framework.CustomLogPipelineConfigProvider;
 import io.cdap.cdap.logging.guice.KafkaLogAppenderModule;
 import io.cdap.cdap.metrics.guice.MetricsClientRuntimeModule;
 import io.cdap.cdap.security.auth.context.AuthenticationContextModules;
@@ -39,6 +43,8 @@ import io.cdap.cdap.security.impersonation.UGIProvider;
 import io.cdap.cdap.security.impersonation.UnsupportedUGIProvider;
 import org.apache.tephra.runtime.TransactionModules;
 import org.junit.ClassRule;
+
+import java.io.File;
 
 /**
  * Base test class that start up Kafka during at the beginning of the test, and stop Kafka when test is done.
@@ -71,6 +77,11 @@ public abstract class KafkaTestBase {
           bind(UGIProvider.class).to(UnsupportedUGIProvider.class);
           bind(OwnerAdmin.class).to(DefaultOwnerAdmin.class);
           bind(NamespaceQueryAdmin.class).to(SimpleNamespaceQueryAdmin.class);
+        }
+
+        @Provides
+        public CustomLogPipelineConfigProvider provideCustomLogConfig(CConfiguration cConf) {
+          return () -> DirUtils.listFiles(new File(cConf.get(Constants.Logging.PIPELINE_CONFIG_DIR)), "xml");
         }
       }
     ),
